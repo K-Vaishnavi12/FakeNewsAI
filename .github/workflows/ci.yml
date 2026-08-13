@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Fully offline, deterministic test run: no LLM, no MCP subprocesses,
+  # no external fact-check API.
+  AGENT_USE_MCP: "0"
+  EXPLAINER_BACKEND: occlusion
+  LOG_LEVEL: WARNING
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ruff
+        run: pip install ruff==0.6.5
+
+      - name: Lint
+        run: ruff check .
+
+  test:
+    name: pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+
+      - name: Install CPU-only torch
+        run: pip install --index-url https://download.pytorch.org/whl/cpu torch==2.4.1
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build dataset splits (synthetic fallback when no raw data)
+        run: python -m src.data.split
+
+      - name: Train baseline classifier
+        run: python -m src.models.baseline
+
+      - name: Calibrate trust scores
+        run: python -m src.models.calibrate
+
+      - name: Seed the vector store
+        run: python -m src.rag.ingest_vectors
+
+      - name: Run tests
+        run: pytest -q
