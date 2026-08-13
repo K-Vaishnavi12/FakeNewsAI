@@ -2,13 +2,19 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, veritruth]
   pull_request:
   workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+# The project lives in the veritruth/ subfolder; the workflow itself must
+# stay at the repository root for GitHub to discover it.
+defaults:
+  run:
+    working-directory: veritruth
 
 env:
   # Fully offline, deterministic test run: no LLM, no MCP subprocesses,
@@ -46,13 +52,14 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: requirements.txt
+          # Resolved from the repo root: `uses` steps ignore working-directory.
+          cache-dependency-path: veritruth/requirements.txt
 
       - name: Cache Hugging Face models
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: hf-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          key: hf-${{ runner.os }}-${{ hashFiles('veritruth/requirements.txt') }}
 
       - name: Install CPU-only torch
         run: pip install --index-url https://download.pytorch.org/whl/cpu torch==2.4.1

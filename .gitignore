@@ -1,52 +1,15 @@
-# --- Secrets ---
-.env
-*.env
-!.env.example
+# Repository-root ignores. The project itself lives in veritruth/ and has
+# its own .gitignore covering venvs, data, models and secrets.
 
-# --- Python ---
-__pycache__/
-*.py[cod]
-*.egg-info/
-.eggs/
-build/
-dist/
-.venv/
-venv/
-env/
-.python-version
+# Playwright MCP capture artifacts
+.playwright-mcp/
 
-# --- Testing / tooling ---
-.pytest_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-.mypy_cache/
+# Loose screenshots captured during UI verification
+*.png
+!veritruth/docs/*.png
 
-# --- Data & artifacts ---
-data/raw/*
-!data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
-data/*.sqlite3
-models/*
-!models/.gitkeep
-vectordb/*
-!vectordb/.gitkeep
-
-# --- Notebooks ---
-.ipynb_checkpoints/
-
-# --- HF / torch caches ---
-.cache/
-hf_cache/
-
-# --- OS / IDE ---
+# OS / IDE
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
-
-# --- Playwright MCP artifacts ---
-.playwright-mcp/
-*.png
-!docs/*.png
