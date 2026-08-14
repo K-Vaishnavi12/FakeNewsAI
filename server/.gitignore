@@ -1,0 +1,12 @@
+# Ignore environment files and credentials
+.env
+*.json
+
+# Python cache
+__pycache__/
+
+# Virtual environment (if created in repo)
+venv/
+
+# Model artifacts
+server/models/
