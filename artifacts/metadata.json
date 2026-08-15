@@ -1,0 +1,35 @@
+{
+  "artifact_version": "1.0.0",
+  "trained_at": "2026-08-15T06:08:23.373761+00:00",
+  "dataset_origin": "synthetic-bootstrap-v1",
+  "dataset_size": 2400,
+  "label_mapping": {
+    "0": "FAKE",
+    "1": "REAL"
+  },
+  "models": [
+    "logistic_regression",
+    "linear_svm",
+    "multinomial_nb",
+    "random_forest_style_features"
+  ],
+  "metrics": {
+    "logistic_regression": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0
+    },
+    "linear_svm": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0
+    },
+    "multinomial_nb": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0
+    },
+    "random_forest_style_features": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0
+    }
+  },
+  "caveat": "Trained on a stylistic corpus. The model detects sensational writing style, not factual truth. Treat its output as a weak signal only."
+}
