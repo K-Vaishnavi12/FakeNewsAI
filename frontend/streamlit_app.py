@@ -15,6 +15,7 @@ The frontend holds no secrets. It calls the FastAPI backend, which owns the keys
 
 from __future__ import annotations
 
+import base64
 import os
 import sys
 from pathlib import Path
@@ -72,7 +73,388 @@ INPUT_TYPE_LABELS = {
 }
 
 
-st.set_page_config(page_title="VeritasCheck", page_icon="🔎", layout="wide")
+st.set_page_config(page_title="TruthLens AI", page_icon="📰", layout="wide")
+
+
+def inject_theme() -> None:
+    paper_image = (
+        Path(__file__).resolve().parent.parent
+        / "old-grunge-news-paper-background-black-white-grungy-paper-texture-vintage-newsprint-design-scratched-poster-template_1028938-314871.avif"
+    )
+    paper_url = (
+        "data:image/avif;base64,"
+        + base64.b64encode(paper_image.read_bytes()).decode("utf-8")
+    )
+
+    st.markdown(
+        f"""
+        <style>
+        :root {{
+            --truthlens-bg: #071827;
+            --truthlens-panel: rgba(10, 19, 31, 0.68);
+            --truthlens-panel-strong: rgba(9, 16, 28, 0.82);
+            --truthlens-border: rgba(148, 163, 184, 0.28);
+            --truthlens-blue: #64b5ff;
+            --truthlens-blue-strong: #2d7ef7;
+            --truthlens-text: #edf5ff;
+            --truthlens-soft: #dce7f7;
+            --truthlens-muted: rgba(220, 231, 247, 0.8);
+        }}
+
+        html, body {{
+            background: linear-gradient(180deg, rgba(7, 24, 39, 0.9), rgba(7, 24, 39, 0.96));
+        }}
+
+        .stApp {{
+            background: linear-gradient(180deg, rgba(7, 24, 39, 0.78), rgba(7, 24, 39, 0.88));
+            color: var(--truthlens-text);
+        }}
+
+        [data-testid="stHeader"] {{
+            background: rgba(7, 24, 39, 0.2);
+            box-shadow: none;
+            border-bottom: 0;
+        }}
+
+        .block-container {{
+            max-width: 1240px;
+            padding-top: 1.2rem;
+            padding-bottom: 3rem;
+        }}
+
+        .stApp {{
+            background: #071426;
+        }}
+
+        .block-container {{
+            max-width: 100% !important;
+            padding: 0 !important;
+        }}
+
+        .truthlens-shell {{
+            position: relative;
+            min-height: 100vh;
+            min-height: 100svh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            border: 0;
+            border-radius: 0;
+            overflow: hidden;
+            box-shadow: none;
+            background: rgba(11, 18, 29, 0.55);
+        }}
+
+        .truthlens-shell::before {{
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(11, 17, 28, 0.6), rgba(11, 17, 28, 0.75)),
+                url("{paper_url}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: grayscale(1) contrast(1.25) brightness(0.65);
+            opacity: 0.9;
+        }}
+
+        .truthlens-card {{
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            width: min(100%, 1100px);
+            padding: 2.2rem 1rem 2.5rem;
+        }}
+
+        .truthlens-badge {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1.25rem;
+            padding: 0.55rem 1.2rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #0d2f4f;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+            font-size: 0.86rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }}
+
+        .truthlens-badge-dot {{
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--truthlens-blue-strong);
+            box-shadow: 0 0 0 4px rgba(45, 126, 247, 0.15);
+        }}
+
+        .truthlens-title {{
+            margin: 0;
+            font-size: clamp(4rem, 9vw, 10rem);
+            line-height: 0.9;
+            letter-spacing: -0.06em;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+        }}
+
+        .truthlens-title .highlight {{
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.95);
+        }}
+
+        .truthlens-quote {{
+            margin-top: 1.5rem;
+            font-size: clamp(1.65rem, 2vw, 2.5rem);
+            font-family: Georgia, 'Times New Roman', serif;
+            color: rgba(255, 255, 255, 0.96);
+            font-style: italic;
+            font-weight: 600;
+            line-height: 1.3;
+        }}
+
+        .truthlens-subquote {{
+            margin-top: 1rem;
+            font-size: clamp(1.1rem, 1.4vw, 1.6rem);
+            font-family: Georgia, 'Times New Roman', serif;
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
+        }}
+
+        div[data-testid="stButton"] button[kind="primary"] {{
+            display: block;
+            min-height: 52px;
+            min-width: 320px;
+            margin: 2rem auto 0;
+            border-radius: 28px;
+            background: #0b172d;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: 0 14px 26px rgba(1, 8, 22, 0.36);
+        }}
+
+        div[data-testid="stButton"] button[kind="primary"]:hover {{
+            background: #112340;
+            border-color: rgba(148, 163, 184, 0.7);
+        }}
+
+        .truthlens-form {{
+            position: relative;
+            z-index: 2;
+            background: rgba(7, 24, 39, 0.76);
+            border: 1px solid var(--truthlens-border);
+            border-radius: 26px;
+            padding: 1.25rem 1.25rem 0.5rem;
+            box-shadow: 0 18px 42px rgba(2, 6, 23, 0.4);
+            backdrop-filter: blur(2px);
+        }}
+
+        .truthlens-form .stTextArea textarea {{
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 18px;
+            color: #edf5ff;
+            min-height: 160px !important;
+            font-size: 1rem;
+            resize: vertical;
+        }}
+
+        .truthlens-form .stTextArea textarea:focus {{
+            border-color: rgba(100, 181, 255, 0.9);
+            box-shadow: 0 0 0 1px rgba(100, 181, 255, 0.35);
+        }}
+
+        .truthlens-form .stTextArea label {{
+            color: rgba(237, 245, 255, 0.9);
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }}
+
+        .truthlens-demo-bar {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+            color: var(--truthlens-soft);
+        }}
+
+        .truthlens-status-box {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.55rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(19, 33, 48, 0.7);
+            border: 1px solid rgba(156, 163, 175, 0.2);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }}
+
+        .truthlens-status-box .dot {{
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: #4ade80;
+        }}
+
+        .truthlens-status-box .offline {{
+            background: #fbbf24;
+        }}
+
+        .truthlens-main-btn button {{
+            width: 100%;
+            background: linear-gradient(135deg, #2d7ef7, #64b5ff);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 0.95rem 1.2rem;
+            box-shadow: 0 10px 22px rgba(45, 126, 247, 0.35);
+        }}
+
+        .truthlens-main-btn button:hover {{
+            filter: brightness(1.04);
+        }}
+
+        .truthlens-main-btn button:focus {{
+            box-shadow: 0 0 0 2px rgba(164, 201, 255, 0.35);
+        }}
+
+        .truthlens-result {{
+            background: rgba(8, 15, 26, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 20px;
+            padding: 1.25rem 1.2rem;
+            margin-top: 1.5rem;
+        }}
+
+        .truthlens-nav {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.9rem 1.1rem;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 18px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            margin-bottom: 1.5rem;
+        }}
+
+        .truthlens-nav-brand {{
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0f172a;
+        }}
+
+        .truthlens-nav-logo {{
+            width: 22px;
+            height: 22px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #2d7ef7, #64b5ff);
+            box-shadow: 0 5px 12px rgba(45, 126, 247, 0.28);
+        }}
+
+        .truthlens-nav-actions {{
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+        }}
+
+        .truthlens-pill {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(255, 255, 255, 0.7);
+            color: #0f172a;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }}
+
+        .truthlens-dot {{
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: inline-block;
+        }}
+
+        .truthlens-page-card {{
+            position: relative;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 18px;
+            padding: 1.4rem 1.4rem 0.2rem;
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+        }}
+
+        .truthlens-hero-title {{
+            text-align: center;
+            font-size: clamp(2.6rem, 5vw, 5rem);
+            line-height: 1.05;
+            letter-spacing: -0.05em;
+            margin: 0.5rem 0 0.4rem;
+            font-weight: 900;
+            color: #0f172a;
+        }}
+
+        .truthlens-hero-kicker {{
+            text-align: center;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: #2d7ef7;
+            font-weight: 800;
+        }}
+
+        .truthlens-hero-copy {{
+            text-align: center;
+            max-width: 860px;
+            margin: 0.4rem auto 1.2rem;
+            font-size: clamp(1.1rem, 2vw, 1.4rem);
+            color: #334155;
+            line-height: 1.5;
+        }}
+
+        .truthlens-input-panel {{
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 18px;
+            padding: 1.3rem 1.3rem 0.7rem;
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+        }}
+
+        @media (max-width: 700px) {{
+            .truthlens-shell {{
+                min-height: 540px;
+                margin: 0 -0.5rem 1.5rem;
+            }}
+
+            .truthlens-cta {{
+                min-width: 0;
+                width: 100%;
+            }}
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # --- helpers ---------------------------------------------------------------
@@ -402,74 +784,134 @@ def render_limitations(result: dict) -> None:
 # --- page ------------------------------------------------------------------
 
 
-def main() -> None:
-    st.title("🔎 VeritasCheck")
-    st.caption(
-        "Transparent news claim analysis. Every statement below is traceable to "
-        "a labelled source."
+def render_landing_page() -> None:
+    st.markdown(
+        """
+        <div class="truthlens-shell">
+            <div class="truthlens-card">
+                <div class="truthlens-badge">
+                    <span class="truthlens-badge-dot"></span>
+                    <span>AI-Powered News Verification</span>
+                </div>
+                <h1 class="truthlens-title">TruthLens <span class="highlight">AI</span></h1>
+                <div class="truthlens-quote">“See Beyond the Headlines. Discover the Truth.”</div>
+                <div class="truthlens-subquote">“Because Every Story Deserves the Truth.”</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    with st.sidebar:
-        st.header("Status")
-        health = backend_health()
-        if health is None:
-            st.error("Backend unreachable")
-            st.caption(f"Expected at {BACKEND_URL}")
-            st.code("uvicorn app.main:app --reload", language="bash")
-        else:
-            st.success("Backend online")
-            st.write(
-                "News API configured:",
-                "✅" if health.get("news_api_configured") else "❌",
-            )
-            st.write(
-                "NVIDIA configured:",
-                "✅" if health.get("nvidia_configured") else "❌",
-            )
-            st.write(
-                "ML models loaded:",
-                "✅" if health.get("ml_models_available") else "❌",
-            )
-            if not health.get("ml_models_available"):
-                st.code("python -m app.ml.train", language="bash")
+    left, center, right = st.columns([1, 2, 1])
+    with center:
+        if st.button(
+            "Click anywhere on screen to enter →",
+            key="landing_enter",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state.page = "verification"
+            st.rerun()
 
-        st.header("Options")
-        max_sources = st.slider("Maximum sources to retrieve", 3, 30, 10)
 
-        st.header("How to read this")
-        st.caption(
-            "- Only NEWS_API_RESULT records are external evidence.\n"
-            "- MODEL_OUTPUT is a style signal, never proof.\n"
-            "- AI_EXPLANATION interprets evidence, it is not a source.\n"
-            "- 'Needs Verification' means the evidence was not sufficient, "
-            "not that the claim is false."
+def render_verification_page() -> None:
+    st.markdown(
+        """
+        <div class="truthlens-nav">
+            <div class="truthlens-nav-brand">
+                <div class="truthlens-nav-logo"></div>
+                <span>TruthLens AI</span>
+            </div>
+            <div class="truthlens-nav-actions">
+                <div class="truthlens-pill">Front Page</div>
+                <div class="truthlens-pill">API Specs</div>
+                <div class="truthlens-pill"><span class="truthlens-dot"></span>API Connected</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="truthlens-hero-kicker">Story &amp; Claim Verification</div>
+        <h1 class="truthlens-hero-title">Verify Before You Share.</h1>
+        <p class="truthlens-hero-copy">Paste any news story, social media clip, or claim to evaluate credibility signals, examine influential keywords, and check cited evidence.</p>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="truthlens-input-panel">', unsafe_allow_html=True)
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        text = st.text_area(
+            "Article or Claim Input",
+            value=st.session_state.get("input_text", ""),
+            height=180,
+            placeholder="Paste the news story, headline, or claim you want to verify...",
+            key="input_text_area",
+            label_visibility="visible",
         )
+    with col2:
+        st.markdown("<div style='height: 26px;'></div>", unsafe_allow_html=True)
+        max_sources = st.slider("Sources", 3, 30, 10, key="max_sources")
+        st.caption("Deep source retrieval and evidence checking")
 
-    text = st.text_area(
-        "Paste a news headline, an article clipping, or a full article",
-        height=220,
-        placeholder="e.g. Officials in Hyderabad approved new funding for regional rail expansion...",
+    actions = st.columns([1, 1])
+    with actions[0]:
+        if st.button("Clear", use_container_width=True):
+            st.session_state.pop("result", None)
+            st.session_state["input_text"] = ""
+            st.session_state.pop("input_text_area", None)
+    with actions[1]:
+        if st.button("Analyze & Verify Story", type="primary", use_container_width=True):
+            if not text.strip():
+                st.error("Please enter a headline or article to analyse.")
+            else:
+                st.session_state["input_text"] = text
+                with st.spinner("Classifying, searching for sources and checking claims…"):
+                    result, error = call_backend(text, max_sources)
+                if error:
+                    st.error(error)
+                    st.session_state.pop("result", None)
+                elif result is None:
+                    st.error("No result was returned.")
+                    st.session_state.pop("result", None)
+                else:
+                    st.session_state["result"] = result
+                    st.session_state["analysis_result"] = result
+                    st.session_state.page = "result"
+                    st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_result_page() -> None:
+    st.markdown(
+        """
+        <div class="truthlens-nav">
+            <div class="truthlens-nav-brand">
+                <div class="truthlens-nav-logo"></div>
+                <span>TruthLens AI</span>
+            </div>
+            <div class="truthlens-nav-actions">
+                <button type="button" style="background: rgba(255,255,255,0.8); border:1px solid rgba(148,163,184,0.35); border-radius:12px; padding:0.4rem 0.8rem; font-weight:600; color:#0f172a; cursor:pointer;">← Verify Another Story</button>
+                <div class="truthlens-pill">API Specs</div>
+                <div class="truthlens-pill"><span class="truthlens-dot"></span>API Connected</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    if st.button("Analyse", type="primary", use_container_width=True):
-        if not text.strip():
-            st.error("Please enter a headline or article to analyse.")
-            return
+    if st.button("← Verify Another Story", key="verify_another"):
+        st.session_state.analysis_result = None
+        st.session_state.article_text = ""
+        st.session_state.page = "verification"
+        st.rerun()
 
-        with st.spinner("Classifying, searching for sources and checking claims…"):
-            result, error = call_backend(text, max_sources)
-
-        if error:
-            st.error(error)
-            return
-        if result is None:
-            st.error("No result was returned.")
-            return
-
-        st.session_state["result"] = result
-
-    result = st.session_state.get("result")
+    result = st.session_state.get("analysis_result") or st.session_state.get("result")
     if not result:
+        st.info("No verification result available yet.")
         return
 
     sources_by_id = {
@@ -479,24 +921,18 @@ def main() -> None:
 
     analysis = result.get("final_analysis") or {}
 
-    # 1. Verdict
+    st.markdown('<div class="truthlens-result">', unsafe_allow_html=True)
     render_verdict(analysis)
-    # 2. Explanation
     render_explanation(analysis)
     st.markdown("---")
-    # 3. Claim breakdown
     render_claims(analysis, sources_by_id)
     st.markdown("---")
-    # 4. Source provenance
     render_provenance(result)
     st.markdown("---")
-    # 5. User-submitted clip
     render_user_clip(result)
     st.markdown("---")
-    # 6. ML assessment
     render_ml(result)
     st.markdown("---")
-    # 7. Limitations and next action
     render_limitations(result)
 
     with st.expander("Raw backend response (JSON)", expanded=False):
@@ -506,6 +942,43 @@ def main() -> None:
         f"Request ID: {result.get('request_id', '')} · "
         f"Analysed at: {result.get('analyzed_at', '')}"
     )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_status_banner() -> None:
+    health = backend_health()
+    status_text = "Backend online" if health else "Backend check pending"
+    status_class = "dot" if health else "dot offline"
+    with st.container():
+        st.markdown(
+            f"""
+            <div class="truthlens-demo-bar">
+                <div class="truthlens-status-box"><span class="{status_class}"></span>{status_text}</div>
+                <div class="truthlens-status-box"><span class="dot"></span>{BACKEND_URL}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def main() -> None:
+    inject_theme()
+
+    if "page" not in st.session_state:
+        st.session_state.page = "landing"
+    if "analysis_result" not in st.session_state:
+        st.session_state.analysis_result = None
+    if "article_text" not in st.session_state:
+        st.session_state.article_text = ""
+
+    page = st.session_state.page
+
+    if page == "landing":
+        render_landing_page()
+    elif page == "verification":
+        render_verification_page()
+    elif page == "result":
+        render_result_page()
 
 
 if __name__ == "__main__":

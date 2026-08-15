@@ -309,8 +309,10 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 ### 5.3 Configure secrets
 
-A working `.env` with team API keys is already committed, so **no action is
-needed** — see the warning in §9. To use your own keys instead, edit it:
+A working `.env` with the team API keys is already committed on this branch, so
+**no action is needed** â€” see the warning in section 9.
+
+To substitute your own keys instead:
 
 ```powershell
 notepad .env
@@ -319,7 +321,7 @@ notepad .env
 ### 5.4 Train the ML ensemble
 
 ```powershell
-python -m app.ml.train
+.\.venv\Scripts\python.exe -m app.ml.train
 ```
 
 Optional:
@@ -332,8 +334,11 @@ python -m app.ml.train --augment-from-newsapi
 
 ### 5.5 Run the backend
 
+In one terminal:
+
 ```powershell
-uvicorn app.main:app --reload
+cd C:\Users\kvais\Downloads\FakeNewsAI-truthlens\FakeNewsAI-truthlens
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 â†’ <http://127.0.0.1:8000>  Â·  docs at <http://127.0.0.1:8000/docs>
@@ -352,10 +357,30 @@ npm run dev
 
 ### 5.7 Alternative Streamlit UI
 
+In another terminal:
+
 ```powershell
-.\.venv\Scripts\Activate.ps1
-streamlit run frontend\streamlit_app.py
+cd C:\Users\kvais\Downloads\FakeNewsAI-truthlens\FakeNewsAI-truthlens
+.\.venv\Scripts\streamlit run frontend/streamlit_app.py
 ```
+
+If you want to launch it from the active environment directly, use:
+
+```powershell
+cd C:\Users\kvais\Downloads\FakeNewsAI-truthlens\FakeNewsAI-truthlens
+.\.venv\Scripts\streamlit run frontend/streamlit_app.py
+```
+
+### 5.8 Replace the old TruthLens folder with this project
+
+Move the full project folder into the target directory and replace the old folder if prompted:
+
+```powershell
+cd C:\Users\kvais\Downloads
+Copy-Item -Recurse -Force .\FakeNewsAI-truthlens\ C:\Users\kvais\Downloads\TruthLens\
+```
+
+Or manually copy the entire folder named `FakeNewsAI-truthlens` into the `TruthLens` directory and replace any existing files.
 
 ### 5.8 Tests
 
@@ -387,8 +412,10 @@ pip install -r requirements.txt
 
 ### 6.3 Configure secrets
 
-A working `.env` with team API keys is already committed, so **no action is
-needed** — see the warning in §9. To use your own keys instead, edit it:
+A working `.env` with the team API keys is already committed on this branch, so
+**no action is needed** â€” see the warning in section 9.
+
+To substitute your own keys instead:
 
 ```bash
 nano .env
@@ -496,7 +523,7 @@ never depends on the LLM.**
 > - **This repository must stay private.** Making it public exposes both keys
 >   immediately; automated scanners harvest public commits within minutes.
 > - **The keys are permanent in git history.** Deleting the file later does not
->   remove them from previous commits.
+>   remove them from earlier commits.
 > - **Rotate both keys when the hackathon ends**, at
 >   <https://newsapi.org/account> and <https://build.nvidia.com>.
 >
@@ -512,6 +539,9 @@ never depends on the LLM.**
 - CORS is restricted to loopback origins.
 - A regression test asserts no key material appears in any API response.
 - No paywall bypass and no scraping of restricted content.
+
+> **If a key has ever been pasted into a chat, an issue tracker or a commit,
+> rotate it.** Both providers allow revoking and reissuing from the dashboard.
 
 ---
 
