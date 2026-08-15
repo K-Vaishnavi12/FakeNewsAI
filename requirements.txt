@@ -1,0 +1,16 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+python-dotenv==1.0.1
+requests==2.32.3
+scikit-learn==1.6.0
+numpy==2.2.1
+scipy==1.15.0
+joblib==1.4.2
+openai==1.59.6
+streamlit==1.41.1
+pytest==8.3.4
+
+# Optional: enables the XGBoost engineered-feature member of the ensemble.
+# The app degrades gracefully to RandomForest if this is not installed.
+# xgboost==2.1.3
