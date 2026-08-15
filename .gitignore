@@ -1,0 +1,58 @@
+# --- Secrets ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.key
+secrets.toml
+.streamlit/secrets.toml
+
+# --- ML artifacts ----------------------------------------------------------
+artifacts/
+*.pkl
+*.joblib
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Editors / OS ----------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Node / frontend --------------------------------------------------------
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# --- Logs / runtime ---------------------------------------------------------
+*.log
+backend.log
+backend.err.log
+frontend.log
+frontend.err.log
+vite.log
+vite.err.log
+_shots/
+
+# Preserved original nested repo metadata (not part of the project)
+.git-original-backup/
+
+# Legacy duplicated copy of the project (superseded by app/ + frontend/)
+FakeNewsAI/
+
