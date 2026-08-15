@@ -1,5 +1,8 @@
 # --- Secrets ---------------------------------------------------------------
-.env
+# NOTE: .env is intentionally FORCE-TRACKED on the truthlens branch so the team
+# can clone and run immediately. Keep this repository PRIVATE and rotate the
+# keys when the hackathon ends. See README section 9.
+# .env
 .env.*
 !.env.example
 *.key

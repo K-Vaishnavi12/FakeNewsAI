@@ -309,17 +309,11 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 ### 5.3 Configure secrets
 
+A working `.env` with team API keys is already committed, so **no action is
+needed** Ч see the warning in з9. To use your own keys instead, edit it:
+
 ```powershell
-Copy-Item .env.example .env
 notepad .env
-```
-
-Fill in:
-
-```ini
-NEWS_API_KEY=your_key_from_newsapi_org
-NVIDIA_API_KEY=your_key_from_build_nvidia_com
-NVIDIA_MODEL=meta/llama-3.1-8b-instruct
 ```
 
 ### 5.4 Train the ML ensemble
@@ -393,17 +387,11 @@ pip install -r requirements.txt
 
 ### 6.3 Configure secrets
 
+A working `.env` with team API keys is already committed, so **no action is
+needed** Ч see the warning in з9. To use your own keys instead, edit it:
+
 ```bash
-cp .env.example .env
 nano .env
-```
-
-Fill in:
-
-```ini
-NEWS_API_KEY=your_key_from_newsapi_org
-NVIDIA_API_KEY=your_key_from_build_nvidia_com
-NVIDIA_MODEL=meta/llama-3.1-8b-instruct
 ```
 
 ### 6.4 Train the ML ensemble
@@ -498,16 +486,32 @@ never depends on the LLM.**
 
 ## 9. Security
 
-- Secrets are read from environment variables only. `.env` is gitignored.
+> ### тЪая╕П This repository contains live API keys
+>
+> A working `.env` with real NewsAPI and NVIDIA credentials is committed to the
+> `truthlens` branch so every team member can clone and run the project without
+> any setup. This is a deliberate hackathon convenience and it carries real
+> risk:
+>
+> - **This repository must stay private.** Making it public exposes both keys
+>   immediately; automated scanners harvest public commits within minutes.
+> - **The keys are permanent in git history.** Deleting the file later does not
+>   remove them from previous commits.
+> - **Rotate both keys when the hackathon ends**, at
+>   <https://newsapi.org/account> and <https://build.nvidia.com>.
+>
+> For any deployment beyond this hackathon, delete `.env` from the repository,
+> restore it to `.gitignore`, and supply credentials through environment
+> variables or a secret manager instead.
+
+- Secrets are read from environment variables only; the application code never
+  hard-codes a key.
 - The NewsAPI key is sent as an `X-Api-Key` **header**, never a query parameter,
   so it cannot leak into logs or proxy traces.
 - The frontend holds no credentials; it only calls the backend.
 - CORS is restricted to loopback origins.
-- A regression test asserts no key material appears in any response.
+- A regression test asserts no key material appears in any API response.
 - No paywall bypass and no scraping of restricted content.
-
-> **If a key has ever been pasted into a chat, an issue tracker or a commit,
-> rotate it.** Both providers allow revoking and reissuing from the dashboard.
 
 ---
 
