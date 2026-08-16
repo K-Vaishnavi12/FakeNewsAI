@@ -187,4 +187,12 @@ def train_local_route():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    host = settings.FLASK_HOST
+    port = settings.FLASK_PORT
+    debug = settings.FLASK_DEBUG
+
+    # Never expose Werkzeug debug mode on a public interface.
+    if debug and host == '0.0.0.0':
+        host = '127.0.0.1'
+
+    app.run(host=host, port=port, debug=debug)

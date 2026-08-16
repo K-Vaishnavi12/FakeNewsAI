@@ -3,17 +3,22 @@ import './App.css'
 
 const PRESET_EXAMPLES = [
   {
-    title: 'Real News',
+    title: 'Verified Real News',
     badge: 'real',
     text: 'James Webb Space Telescope captures unprecedented deep-space observations of ancient galaxy clusters, NASA scientists confirmed on Friday.',
   },
   {
-    title: 'Disinformation',
+    title: 'Mars Water Debunk',
+    badge: 'debunk',
+    text: 'Scientists discovered drinkable water on Mars this week.',
+  },
+  {
+    title: 'Fabricated Conspiracy',
     badge: 'fake',
     text: 'BREAKING: Leaked shocking video exposes secret billionaire deep-state cabal plotting global economic collapse inside hidden underground base!',
   },
   {
-    title: 'Ambiguous Claim',
+    title: 'Unverified Claim',
     badge: 'neutral',
     text: 'A secret laboratory has reportedly synthesized a miracle compound that completely reverses human biological aging in three weeks.',
   }
@@ -61,6 +66,7 @@ function App() {
   const finalAnalysis = result?.final_analysis
   const mlData = result?.ml_classifier
   const newsSources = result?.news_sources || []
+  const evidenceBreakdown = finalAnalysis?.evidence_breakdown || {}
   const fakePercent = Math.round((mlData?.fake_probability || 0) * 100)
   const realPercent = Math.round((mlData?.real_probability || 0) * 100)
   const overallScore = Math.round((finalAnalysis?.confidence_score || 0) * 100)
@@ -70,6 +76,8 @@ function App() {
     ? 'verdict-real'
     : verdictType.includes('fake')
     ? 'verdict-fake'
+    : verdictType.includes('disputed')
+    ? 'verdict-disputed'
     : 'verdict-unverified'
 
   return (
@@ -83,11 +91,11 @@ function App() {
         <header className="header">
           <div className="logo-badge">
             <span className="logo-dot" />
-            <span>AI AGENT FACT-CHECKER</span>
+            <span>AI AGENT FACT-CHECKER & EVIDENCE CLASSIFIER</span>
           </div>
           <h1>Fake News Intelligence</h1>
           <p className="subtitle">
-            Dual-branch verification combining a <strong>44.9k-trained ML Classifier</strong>, <strong>Live News Search</strong>, and <strong>Gemini LLM Synthesis</strong>.
+            Multi-branch verification combining a <strong>44.9k-trained ML Classifier</strong>, <strong>Multi-Query Fact-Checking</strong>, and <strong>Semantic Evidence Classification</strong>.
           </p>
 
           {/* Architecture Pipeline Flow Banner */}
@@ -99,17 +107,22 @@ function App() {
             <div className="flow-arrow">→</div>
             <div className="flow-step">
               <span className="step-num">2</span>
-              <span>AI Agent</span>
-            </div>
-            <div className="flow-arrow">→</div>
-            <div className="flow-step highlight">
-              <span className="step-num">3</span>
-              <span>ML Model + NewsAPI</span>
+              <span>ML Model</span>
             </div>
             <div className="flow-arrow">→</div>
             <div className="flow-step">
+              <span className="step-num">3</span>
+              <span>Multi-Query Search</span>
+            </div>
+            <div className="flow-arrow">→</div>
+            <div className="flow-step highlight">
               <span className="step-num">4</span>
-              <span>LLM Synthesis</span>
+              <span>Evidence Classification</span>
+            </div>
+            <div className="flow-arrow">→</div>
+            <div className="flow-step">
+              <span className="step-num">5</span>
+              <span>Decision Matrix</span>
             </div>
           </div>
         </header>
@@ -125,7 +138,7 @@ function App() {
 
             {/* Quick Presets */}
             <div className="presets-bar">
-              <span className="presets-label">Try example:</span>
+              <span className="presets-label">Try scenario:</span>
               <div className="presets-buttons">
                 {PRESET_EXAMPLES.map((ex, idx) => (
                   <button
@@ -145,7 +158,7 @@ function App() {
                 id="claim-input"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Paste news headline, article body, or controversial claim here to run deep analysis..."
+                placeholder="Paste news headline, article body, or controversial claim here to run deep multi-branch analysis..."
                 rows={5}
                 required
               />
@@ -168,11 +181,11 @@ function App() {
                   {loading ? (
                     <>
                       <span className="spinner" />
-                      <span>Running Intelligence Agent...</span>
+                      <span>Classifying Evidence Streams...</span>
                     </>
                   ) : (
                     <>
-                      <span>Run Verification</span>
+                      <span>Run Verification Agent</span>
                       <span className="btn-icon">⚡</span>
                     </>
                   )}
@@ -185,19 +198,23 @@ function App() {
           {loading && (
             <div className="loading-card card">
               <div className="loading-spinner-ring" />
-              <h3>Analyzing Information Streams...</h3>
+              <h3>Analyzing Information Streams & Classifying Evidence...</h3>
               <div className="loading-steps">
                 <div className="loading-step active">
                   <span className="check-icon">✓</span>
-                  <span>Branch A: Computing TF-IDF & Logistic Regression probabilities</span>
+                  <span>Branch 1: Computing TF-IDF & Stylometric probabilities</span>
                 </div>
                 <div className="loading-step active">
                   <span className="check-icon">✓</span>
-                  <span>Branch B: Searching live verified news databases</span>
+                  <span>Branch 2: Searching live news & fact-check databases (multi-query)</span>
                 </div>
                 <div className="loading-step active">
                   <span className="spinner-mini" />
-                  <span>Convergence: Generating Gemini multi-factor final synthesis</span>
+                  <span>Branch 3: Classifying article stances (Supports, Contradicts, Neutral)</span>
+                </div>
+                <div className="loading-step active">
+                  <span className="spinner-mini" />
+                  <span>Convergence: Fusing Decision Matrix into definitive final verdict</span>
                 </div>
               </div>
             </div>
@@ -221,7 +238,7 @@ function App() {
               <section className={`card verdict-card ${verdictClass}`}>
                 <div className="verdict-header">
                   <div className="verdict-badge-group">
-                    <span className="verdict-tag">FINAL VERDICT</span>
+                    <span className="verdict-tag">FINAL VERDICT & SYNTHESIS</span>
                     <h2 className="verdict-title">{finalAnalysis?.verdict || 'Analysis Complete'}</h2>
                   </div>
 
@@ -235,18 +252,36 @@ function App() {
                   <p>{finalAnalysis?.executive_summary}</p>
                 </div>
 
+                {/* Evidence Stance Breakdown Bar */}
+                {evidenceBreakdown && (
+                  <div className="evidence-summary-bar">
+                    <span className="evidence-summary-title">Evidence Stance Breakdown:</span>
+                    <div className="evidence-pills">
+                      <span className="evidence-pill pill-support">
+                        ✓ {evidenceBreakdown.supports_count || 0} Supports Claim
+                      </span>
+                      <span className="evidence-pill pill-contradict">
+                        ✗ {evidenceBreakdown.contradicts_count || 0} Contradicts / Debunked
+                      </span>
+                      <span className="evidence-pill pill-neutral">
+                        ~ {evidenceBreakdown.neutral_count || 0} Neutral / Related
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Synthesis Highlights */}
                 <div className="synthesis-grid">
                   {finalAnalysis?.ml_insights && (
                     <div className="insight-box">
-                      <h4>📊 Statistical Findings</h4>
+                      <h4>📊 Branch 1: Statistical & Linguistic Analysis</h4>
                       <p>{finalAnalysis.ml_insights}</p>
                     </div>
                   )}
 
                   {finalAnalysis?.news_cross_check && (
                     <div className="insight-box">
-                      <h4>🌐 News Coverage Cross-Check</h4>
+                      <h4>🌐 Branch 2 & 3: Evidence Cross-Check</h4>
                       <p>{finalAnalysis.news_cross_check}</p>
                     </div>
                   )}
@@ -266,7 +301,7 @@ function App() {
 
                 {finalAnalysis?.recommendations && (
                   <div className="recommendation-box">
-                    <strong>💡 Recommendation: </strong>
+                    <strong>💡 Agent Recommendation: </strong>
                     <span>{finalAnalysis.recommendations}</span>
                   </div>
                 )}
@@ -279,7 +314,7 @@ function App() {
                   <div className="card-header">
                     <div>
                       <h3>ML Classifier</h3>
-                      <span className="card-sub">TF-IDF + Logistic Regression</span>
+                      <span className="card-sub">Branch 1: TF-IDF + Logistic Regression</span>
                     </div>
                     <span className="accuracy-pill">98.8% Accuracy</span>
                   </div>
@@ -316,7 +351,7 @@ function App() {
                   {/* Salient Linguistic Tokens */}
                   {mlData?.top_signals && mlData.top_signals.length > 0 && (
                     <div className="signals-section">
-                      <h4>Influential Word Cues</h4>
+                      <h4>Influential Linguistic Cues</h4>
                       <div className="signals-chips">
                         {mlData.top_signals.map((sig, i) => (
                           <span
@@ -337,53 +372,78 @@ function App() {
                   </div>
                 </section>
 
-                {/* Column 2: Live Verified News Sources */}
+                {/* Column 2: Classified Live News Evidence */}
                 <section className="card news-card">
                   <div className="card-header">
                     <div>
-                      <h3>Live News Verification</h3>
-                      <span className="card-sub">NewsAPI & Real-time Feeds</span>
+                      <h3>Classified Evidence</h3>
+                      <span className="card-sub">Branch 2 & 3: Multi-Query Live News & Stance Analysis</span>
                     </div>
                     <span className="articles-count-badge">
-                      {newsSources.length} Source{newsSources.length !== 1 ? 's' : ''} Found
+                      {newsSources.length} Source{newsSources.length !== 1 ? 's' : ''} Analyzed
                     </span>
                   </div>
 
                   <div className="articles-scroll">
                     {newsSources.length > 0 ? (
-                      newsSources.map((art, idx) => (
-                        <div key={idx} className="article-item">
-                          <div className="article-header">
-                            <span className="article-source">{art.source || 'News Source'}</span>
-                            {art.published_at && (
-                              <span className="article-date">
-                                {new Date(art.published_at).toLocaleDateString(undefined, {
-                                  month: 'short',
-                                  day: 'numeric'
-                                })}
+                      newsSources.map((art, idx) => {
+                        const stanceType = (art.stance_type || 'neutral').toLowerCase()
+                        const stanceBadgeClass = stanceType === 'support'
+                          ? 'stance-badge-support'
+                          : stanceType === 'contradict'
+                          ? 'stance-badge-contradict'
+                          : 'stance-badge-neutral'
+
+                        return (
+                          <div key={idx} className={`article-item article-${stanceType}`}>
+                            <div className="article-header">
+                              <span className="article-source">{art.source || 'News Source'}</span>
+                              <span className={`stance-badge ${stanceBadgeClass}`}>
+                                {art.stance || 'NEUTRAL / RELATED'}
                               </span>
+                            </div>
+
+                            <h4 className="article-title">{art.title}</h4>
+
+                            {art.stance_reason && (
+                              <div className="stance-reason-box">
+                                <span className="stance-reason-icon">🔍</span>
+                                <span>{art.stance_reason}</span>
+                              </div>
                             )}
+
+                            {art.description && (
+                              <p className="article-snippet">{art.description}</p>
+                            )}
+
+                            <div className="article-footer">
+                              {art.published_at && (
+                                <span className="article-date">
+                                  {new Date(art.published_at).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              )}
+                              {art.url && (
+                                <a
+                                  href={art.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="article-link-btn"
+                                >
+                                  <span>Read Source</span>
+                                  <span>↗</span>
+                                </a>
+                              )}
+                            </div>
                           </div>
-                          <h4 className="article-title">{art.title}</h4>
-                          {art.description && (
-                            <p className="article-snippet">{art.description}</p>
-                          )}
-                          {art.url && (
-                            <a
-                              href={art.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="article-link-btn"
-                            >
-                              <span>Read Source</span>
-                              <span>↗</span>
-                            </a>
-                          )}
-                        </div>
-                      ))
+                        )
+                      })
                     ) : (
                       <div className="no-articles-msg">
-                        <p>No directly matching articles were found in live news streams for this exact query.</p>
+                        <p>No directly matching articles were found across live news & fact-check streams for this query.</p>
                       </div>
                     )}
                   </div>

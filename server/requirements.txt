@@ -4,7 +4,7 @@
 Flask>=2.0.0
 
 # Machine Learning & Data Processing
-scikit-learn>=1.0.0
+scikit-learn==1.6.1
 pandas>=1.3.0
 numpy>=1.21.0
 joblib>=1.1.0
@@ -18,6 +18,9 @@ transformers>=4.30.0
 torch>=2.0.0
 accelerate>=0.20.0
 huggingface-hub>=0.15.0
+
+# Google Gemini SDK (replacement for deprecated google.generativeai)
+google-genai>=1.0.0
 
 # Testing Framework
 pytest>=7.0.0

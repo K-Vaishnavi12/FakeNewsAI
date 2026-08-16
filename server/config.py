@@ -12,6 +12,9 @@ class Settings:
     LOCAL_HF_MODEL = os.getenv('LOCAL_HF_MODEL', 'gpt2')
     HF_TOKEN = os.getenv('HF_TOKEN', '')
     MODEL_MODE = os.getenv('MODEL_MODE', 'local')
+    FLASK_HOST = os.getenv('FLASK_HOST', '127.0.0.1')
+    FLASK_PORT = int(os.getenv('FLASK_PORT', '5000'))
+    FLASK_DEBUG = os.getenv('FLASK_DEBUG', 'false').strip().lower() in ('1', 'true', 'yes', 'on')
 
 
 settings = Settings()
