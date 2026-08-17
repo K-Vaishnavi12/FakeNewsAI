@@ -33,7 +33,11 @@ from sklearn.pipeline import Pipeline
 
 from ..constants import CLASS_LABELS
 from ..paths import DATA_DIR
-from ..datasets import DEFAULT_DRIVE_FOLDER_URL, sync_from_drive
+from ..datasets import (
+    DEFAULT_DRIVE_FOLDER_URL,
+    sync_from_drive,
+    sync_from_github_release,
+)
 
 MODEL_TYPE = "Augmented Multi-Scale TF-IDF + Logistic Regression"
 
@@ -322,30 +326,41 @@ def main():
     parser.add_argument(
         "--download-data",
         action="store_true",
-        help="Download datasets from the public Google Drive folder before training.",
+        help="Download datasets before training (see --download-from).",
+    )
+    parser.add_argument(
+        "--download-from",
+        choices=("release", "drive"),
+        default="release",
+        help="Source for --download-data: the GitHub release (default) or the "
+             "Google Drive mirror.",
     )
     parser.add_argument(
         "--drive-url",
         type=str,
         default=DEFAULT_DRIVE_FOLDER_URL,
-        help="Public Google Drive folder URL used when --download-data is set.",
+        help="Public Google Drive folder URL, used with --download-from drive.",
     )
     parser.add_argument(
         "--purge-existing-data",
         action="store_true",
-        help="Delete existing .csv/.txt/.mat files in data dir before downloading.",
+        help="Delete existing dataset files in data dir before downloading.",
     )
     args = parser.parse_args()
 
     if args.download_data:
         target_dir = args.data_dir or find_data_dir(None)
         print(f"Preparing datasets in: {target_dir}")
-        synced = sync_from_drive(
-            folder_url=args.drive_url,
-            data_dir=target_dir,
-            purge_existing=args.purge_existing_data,
-        )
-        print(f"Downloaded {len(synced)} file(s) from Google Drive.")
+        if args.download_from == "drive":
+            synced = sync_from_drive(
+                folder_url=args.drive_url,
+                data_dir=target_dir,
+                purge_existing=args.purge_existing_data,
+            )
+            print(f"Downloaded {len(synced)} file(s) from Google Drive.")
+        else:
+            synced = sync_from_github_release(data_dir=target_dir)
+            print(f"Downloaded {len(synced)} file(s) from the GitHub release.")
 
     train(data_dir=args.data_dir, output_path=args.output)
 

@@ -10,7 +10,7 @@
 # --- Secrets ---------------------------------------------------------------
 .env
 .env.*
-!.env.example
+.env.example
 
 # --- Python ----------------------------------------------------------------
 __pycache__/
@@ -30,20 +30,53 @@ server/venv/
 
 # --- Trained model artefacts (large binaries; rebuild via train_model) ------
 server/ml/models/
+server/models/
+models/
 *.joblib
 *.pkl
+*.safetensors
+*.pt
+*.pth
 
-# --- Datasets (large; download separately, see README) ---------------------
-server/data/
-!server/data/README.md
-Data/
+# --- Datasets (large; fetched separately, see server/data/README.md) --------
+#
+# NOTE the trailing /* rather than /. Excluding the *directory* makes Git skip
+# it entirely, and a negation can never re-include a file inside a skipped
+# directory -- so "server/data/" plus "!server/data/README.md" silently drops
+# the README. Ignoring the directory's *contents* keeps the negation working.
+server/data/*
+# Legacy top-level location, kept so a stale checkout cannot commit datasets.
+# The leading slash anchors this to the repo root. Without it the pattern
+# matches at any depth, and because core.ignorecase=true on Windows a bare
+# "Data/" also matched "server/data/" -- which re-ignored the README below.
+/Data/
+# Partial/interrupted downloads (gdown writes <name><random>.part).
 *.part
+
+# Dataset payload by extension, anywhere in the tree. This is belt-and-braces
+# on top of the directory rules above: no tracked .csv exists today, so nothing
+# is lost. If a genuine small fixture is ever needed, re-include it explicitly
+# with a negation (e.g. "!server/tests/fixtures/sample.csv").
+*.csv
+*.tsv
+*.jsonl
+*.mat
+
+# Keep the dataset instructions tracked. This negation must come *after* every
+# rule above that could match it.
+!server/data/README.md
+
+# --- Logs & temporary files ------------------------------------------------
+*.log
+*.tmp
+*.bak
 
 # --- Node / frontend -------------------------------------------------------
 node_modules/
 dist/
 dist-ssr/
 build/
+.vite/
 *.local
 npm-debug.log*
 yarn-debug.log*

@@ -164,27 +164,85 @@ server-side, never returned to the client).
 
 ---
 
+## Dataset setup
+
+> **The datasets are not committed to this repository and never will be.** They
+> total ~408 MB and `WELFake_Dataset.csv` alone is 234 MB, over GitHub's 100 MB
+> per-file hard limit. Everything in `server/data/` except its `README.md` is
+> gitignored. Never commit datasets, `.env` files, API keys or credentials.
+
+They are published instead as assets on the **`datasets-v1` release**:
+[github.com/K-Vaishnavi12/FakeNewsAI/releases/tag/datasets-v1](https://github.com/K-Vaishnavi12/FakeNewsAI/releases/tag/datasets-v1)
+(17 files, 408 MB). A mirror of the original folder is on
+[Google Drive](https://drive.google.com/drive/folders/1vuV3ALf6JmHLR8HVGENPPK9LG9bcWSnC).
+
+They belong in **`server/data/`**, flat, no subfolders. That path is defined
+once as `DATA_DIR` in `server/paths.py` and is read from there by the training
+pipeline, the Flask API and the sync tool.
+
+```bash
+pip install -r server/requirements.txt
+
+# Default — GitHub release assets. The repo is private, so authenticate first:
+gh auth login
+python -m server.datasets sync
+
+# Fallback — public Google Drive mirror (no GitHub auth needed)
+python -m server.datasets sync --from drive
+
+# You already downloaded the folder manually
+python -m server.datasets sync --source "/path/to/downloaded/Data"
+
+# Verify before training (exits non-zero if anything is missing)
+python -m server.datasets check
+```
+
+Expected output of `check`:
+
+```text
+  [ok]      WELFake_Dataset.csv                      233.73 MB
+  [ok]      Fake.csv                                  59.88 MB
+  [ok]      True.csv                                  51.10 MB
+  [ok]      BuzzFeed_fake_news_content.csv             0.62 MB
+  [ok]      BuzzFeed_real_news_content.csv             0.58 MB
+
+5/5 required training files present.
+```
+
+| Required file | Size | Columns used | Labels |
+| --- | ---: | --- | --- |
+| `WELFake_Dataset.csv` | 234 MB | `title`, `text`, `label` | `1`=fake, `0`=real (remapped on load) |
+| `Fake.csv` (ISOT) | 60 MB | `title`, `text`, `subject`, `date` | all fake |
+| `True.csv` (ISOT) | 51 MB | `title`, `text`, `subject`, `date` | all real |
+| `BuzzFeed_fake_news_content.csv` | 0.6 MB | `id`, `title`, `text` | all fake |
+| `BuzzFeed_real_news_content.csv` | 0.6 MB | `id`, `title`, `text` | all real |
+
+The loader **skips missing files silently**, so an incomplete set yields a
+weaker model with no error — always run `check` first. A leftover `*.part` file
+is an interrupted download, not data; delete it and re-run `sync`.
+
+Full details, including the 12 unused files also present in the release:
+[`server/data/README.md`](server/data/README.md).
+
+---
+
 ## Training
 
 ```bash
-python -m server.ml.train_model --data-dir server/data
-```
-
-To pull datasets from the public Google Drive folder into `server/data`:
-
-```bash
-python -m server.datasets sync --purge-existing
+python -m server.ml.train_model
 ```
 
 One-command bootstrap + train (downloads first, then trains):
 
 ```bash
-python -m server.ml.train_model --data-dir server/data --download-data --purge-existing-data
+python -m server.ml.train_model --download-data --purge-existing-data
 ```
 
-Datasets are **not** in the repository (they are large; see `.gitignore`).
-Place the CSVs in `server/data/`: `WELFake_Dataset.csv`, `Fake.csv`,
-`True.csv`, `BuzzFeed_*_news_content.csv`.
+`--data-dir` overrides the location and `--output` the artefact name. The model
+is written to `server/ml/models/` and is gitignored — rebuild it, don't commit
+it.
+
+Datasets are **not** in the repository — see [Dataset setup](#dataset-setup).
 
 The saved bundle records `accuracy`, `eval_method`, `model_type`, `classes`
 and `trained_at`. The API and UI read accuracy from this metadata — it is
@@ -200,8 +258,11 @@ which inflated the reported score.
 
 ### Measured accuracy
 
-Only the BuzzFeed set (**178 usable articles**) is currently present, so these
-numbers are from a very small corpus and carry wide error bars.
+These numbers were measured when **only the BuzzFeed set (178 usable
+articles)** was present locally, so they come from a very small corpus and
+carry wide error bars. They have **not** been re-measured since WELFake and
+ISOT became available via `python -m server.datasets sync` — retrain and
+re-evaluate before quoting them.
 
 | Method | Accuracy |
 |---|---|
@@ -213,14 +274,17 @@ numbers are from a very small corpus and carry wide error bars.
 
 Majority-class baseline is 51.1%. Treat **~67%** as the realistic figure and
 ~61% for short headline claims. The single 83.33% holdout is optimistic: its
-test set is only 36 articles. To improve this meaningfully, add the WELFake
-and ISOT datasets to `server/data/` and retrain.
+test set is only 36 articles. To improve this meaningfully, run
+`python -m server.datasets sync` to add the WELFake and ISOT sets, then
+retrain.
 
-> **Data integrity note:** `PolitiFact_fake_news_content.csv` and
-> `PolitiFact_real_news_content.csv` in `server/data/` are byte-identical, and
-> both contain the *real* article set (rows carry ids like `Real_1-Webpage`).
-> They are deliberately excluded from `DATASET_REGISTRY` and are not loaded by
-> the training pipeline. Do not use them until a correct fake set is obtained.
+> **Data integrity note:** despite its name,
+> `PolitiFact_fake_news_content.csv` contains the *real* article set — its rows
+> carry ids like `Real_1-Webpage`. It is deliberately excluded from
+> `DATASET_REGISTRY` and is not loaded by the training pipeline. Neither the
+> release nor the Drive mirror ships a correct PolitiFact fake set, so do not
+> enable it until one is
+> obtained. (`BuzzFeed_fake_news_content.csv` is correct — ids are `Fake_1-…`.)
 
 ---
 

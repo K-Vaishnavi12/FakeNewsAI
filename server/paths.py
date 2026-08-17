@@ -26,22 +26,26 @@ logger = get_logger(__name__)
 # Base directories. Everything reachable from HTTP must live under one of these.
 SERVER_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SERVER_DIR)
-# Datasets live in a top-level Data/ directory (they are gitignored and synced
-# separately via `python -m server.datasets sync`). This was previously
-# server/data/; the constant is defined once here so the training pipeline and
-# the sync tool can never disagree about the location again.
-DATA_DIR = os.path.join(REPO_ROOT, "Data")
+# Datasets live in server/data/. They are gitignored and fetched separately via
+# `python -m server.datasets sync` -- see server/data/README.md.
+#
+# This constant is the single source of truth for the location. Defining it once
+# here is what stops the training pipeline, the sync tool and the docs from
+# disagreeing; a previous revision pointed this at <repo>/Data while .gitignore
+# and the README still said server/data/, so anyone following the README put the
+# CSVs somewhere the loader never looked.
+DATA_DIR = os.path.join(SERVER_DIR, "data")
 MODELS_DIR = os.path.join(SERVER_DIR, "ml", "models")
 
 # Logical dataset name -> filename inside DATA_DIR.
 # Using a fixed registry means the API surface is an enum, not a path.
 #
-# NOTE: PolitiFact_fake_news_content.csv and PolitiFact_real_news_content.csv
-# are deliberately NOT listed. The two files in server/data/ are byte-identical
-# (same SHA-256) and both contain the *real* article set -- the rows in the
-# "fake" file carry ids like "Real_1-Webpage". Registering them would let a
-# caller train on 120 real articles labelled as fake, destroying the model.
-# Re-add them only once a correct PolitiFact fake set is obtained.
+# NOTE: PolitiFact_fake_news_content.csv is deliberately NOT listed. Despite
+# the filename its rows carry ids like "Real_1-Webpage" -- it holds the *real*
+# article set, not the fake one. Registering it would let a caller train on
+# ~120 real articles labelled as fake, poisoning the model. The Drive folder
+# ships no correct PolitiFact fake set; add one before re-enabling this.
+# (BuzzFeed_fake_news_content.csv is fine -- its ids are "Fake_1-Webpage".)
 DATASET_REGISTRY = {
     "welfake": "WELFake_Dataset.csv",
     "isot_fake": "Fake.csv",
