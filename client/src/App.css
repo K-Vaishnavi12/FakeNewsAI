@@ -814,3 +814,11 @@ textarea:focus {
     font-size: 2.2rem;
   }
 }
+
+/* Client-side notice when input exceeds the backend's MAX_INPUT_CHARS cap. */
+.input-warning {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: #ff6b6b;
+}
+

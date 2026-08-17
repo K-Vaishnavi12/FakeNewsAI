@@ -1,0 +1,59 @@
+# ---------------------------------------------------------------------------
+# Repository-root .gitignore
+#
+# The previous rules lived in server/.gitignore and used paths relative to the
+# repo root ("server/models/", "data/Fake.csv") even though the file sat inside
+# server/. Nothing matched, so the trained model and every dataset were
+# committed. Rules now live here, at the root, where those paths are correct.
+# ---------------------------------------------------------------------------
+
+# --- Secrets ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Virtual environments --------------------------------------------------
+.venv/
+venv/
+env/
+server/venv/
+
+# --- Trained model artefacts (large binaries; rebuild via train_model) ------
+server/ml/models/
+*.joblib
+*.pkl
+
+# --- Datasets (large; download separately, see README) ---------------------
+server/data/
+!server/data/README.md
+Data/
+*.part
+
+# --- Node / frontend -------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+build/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Editors & OS ----------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp

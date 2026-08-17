@@ -1,0 +1,10 @@
+# Optional dependencies for the LLM synthesis pass (ENABLE_LLM=true).
+# Kept separate from requirements.txt because torch + transformers pull down
+# several gigabytes, which nobody who just wants the classifier should pay for.
+transformers>=4.40.0
+torch>=2.0.0
+accelerate>=0.25.0
+huggingface-hub>=0.20.0
+
+# Only needed when LLM_PROVIDER=gemini
+google-generativeai>=0.5.0

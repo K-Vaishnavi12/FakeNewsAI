@@ -1,5 +1,35 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
+
+// Keep in sync with the backend's MAX_INPUT_CHARS. The server is the real
+// authority; this only gives the user immediate feedback instead of a 400.
+const MAX_INPUT_CHARS = 10000
+
+// Only these schemes may appear in an href we render.
+const SAFE_URL_SCHEMES = ['http:', 'https:']
+
+/**
+ * Return `url` only if it is a syntactically valid http(s) URL, else null.
+ *
+ * Article URLs come from NewsAPI / Google News RSS, i.e. from outside our
+ * trust boundary. React escapes text nodes, but it does NOT sanitise the
+ * `href` attribute: rendering `href="javascript:alert(document.cookie)"`
+ * produces a working XSS payload that fires on click. Every untrusted URL
+ * must therefore pass through this function before being rendered.
+ *
+ * @param {unknown} url Candidate URL from the backend.
+ * @returns {string|null} The safe URL, or null if it must not be linked.
+ */
+function safeUrl(url) {
+  if (typeof url !== 'string' || !url.trim()) return null
+  try {
+    const parsed = new URL(url, window.location.origin)
+    return SAFE_URL_SCHEMES.includes(parsed.protocol) ? parsed.href : null
+  } catch {
+    // Not parseable as a URL at all -> never render it as a link.
+    return null
+  }
+}
 
 const PRESET_EXAMPLES = [
   {
@@ -24,10 +54,24 @@ function App() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  // Model metadata (accuracy, type) is read from the backend rather than
+  // hardcoded in the UI, so it can never drift from the deployed model.
+  const [modelInfo, setModelInfo] = useState(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    fetch('/api/health', { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setModelInfo(data) })
+      .catch(() => { /* health is informational only; ignore failures */ })
+    return () => controller.abort()
+  }, [])
+
+  const isOverLimit = text.length > MAX_INPUT_CHARS
 
   async function handleSubmit(e) {
     if (e) e.preventDefault()
-    if (!text.trim()) return
+    if (!text.trim() || isOverLimit) return
 
     setLoading(true)
     setError(null)
@@ -85,9 +129,11 @@ function App() {
             <span className="logo-dot" />
             <span>AI AGENT FACT-CHECKER</span>
           </div>
-          <h1>Fake News Intelligence</h1>
+          <h1>Fake News Detection</h1>
           <p className="subtitle">
-            Dual-branch verification combining a <strong>44.9k-trained ML Classifier</strong>, <strong>Live News Search</strong>, and <strong>Gemini LLM Synthesis</strong>.
+            Dual-branch verification combining a <strong>TF-IDF ML classifier</strong>,{' '}
+            <strong>live news corroboration</strong>, and a{' '}
+            <strong>deterministic synthesis engine</strong>.
           </p>
 
           {/* Architecture Pipeline Flow Banner */}
@@ -109,7 +155,7 @@ function App() {
             <div className="flow-arrow">→</div>
             <div className="flow-step">
               <span className="step-num">4</span>
-              <span>LLM Synthesis</span>
+              <span>Synthesis</span>
             </div>
           </div>
         </header>
@@ -120,7 +166,9 @@ function App() {
           <section className="card input-card">
             <div className="card-header">
               <h2>Verify Article or Claim</h2>
-              <span className="char-count">{text.length} characters</span>
+              <span className="char-count">
+                {text.length.toLocaleString()} / {MAX_INPUT_CHARS.toLocaleString()} characters
+              </span>
             </div>
 
             {/* Quick Presets */}
@@ -147,8 +195,15 @@ function App() {
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Paste news headline, article body, or controversial claim here to run deep analysis..."
                 rows={5}
+                maxLength={MAX_INPUT_CHARS}
                 required
               />
+
+              {isOverLimit && (
+                <p className="input-warning">
+                  Input exceeds the {MAX_INPUT_CHARS.toLocaleString()}-character limit.
+                </p>
+              )}
 
               <div className="form-actions">
                 {text && (
@@ -163,12 +218,12 @@ function App() {
                 <button
                   type="submit"
                   className="analyze-btn"
-                  disabled={loading || !text.trim()}
+                  disabled={loading || !text.trim() || isOverLimit}
                 >
                   {loading ? (
                     <>
                       <span className="spinner" />
-                      <span>Running Intelligence Agent...</span>
+                      <span>Running Detection Pipeline...</span>
                     </>
                   ) : (
                     <>
@@ -197,7 +252,7 @@ function App() {
                 </div>
                 <div className="loading-step active">
                   <span className="spinner-mini" />
-                  <span>Convergence: Generating Gemini multi-factor final synthesis</span>
+                  <span>Convergence: Scoring corroboration and generating the final synthesis</span>
                 </div>
               </div>
             </div>
@@ -279,9 +334,14 @@ function App() {
                   <div className="card-header">
                     <div>
                       <h3>ML Classifier</h3>
-                      <span className="card-sub">TF-IDF + Logistic Regression</span>
+                      <span className="card-sub">{mlData?.model_type || 'TF-IDF + Logistic Regression'}</span>
                     </div>
-                    <span className="accuracy-pill">98.8% Accuracy</span>
+                    {/* Accuracy comes from the trained model's saved metadata
+                        via /api/health, not a hardcoded string. */}
+                    <span className="accuracy-pill">
+                      {mlData?.model_accuracy || modelInfo?.model_accuracy || 'Accuracy unknown'}
+                      {(mlData?.model_accuracy || modelInfo?.model_accuracy) ? ' Accuracy' : ''}
+                    </span>
                   </div>
 
                   {/* Probability Gauges */}
@@ -333,7 +393,11 @@ function App() {
                   )}
 
                   <div className="ml-footnote">
-                    <span>Model trained on 44,898 verified historical articles</span>
+                    <span>
+                      {modelInfo?.model_trained_at
+                        ? `Model trained ${modelInfo.model_trained_at}`
+                        : 'Model metadata unavailable'}
+                    </span>
                   </div>
                 </section>
 
@@ -351,36 +415,41 @@ function App() {
 
                   <div className="articles-scroll">
                     {newsSources.length > 0 ? (
-                      newsSources.map((art, idx) => (
-                        <div key={idx} className="article-item">
-                          <div className="article-header">
-                            <span className="article-source">{art.source || 'News Source'}</span>
-                            {art.published_at && (
-                              <span className="article-date">
-                                {new Date(art.published_at).toLocaleDateString(undefined, {
-                                  month: 'short',
-                                  day: 'numeric'
-                                })}
-                              </span>
+                      newsSources.map((art, idx) => {
+                        // Sanitise before rendering: a malicious search result
+                        // could otherwise supply a javascript: URL.
+                        const href = safeUrl(art.url)
+                        return (
+                          <div key={idx} className="article-item">
+                            <div className="article-header">
+                              <span className="article-source">{art.source || 'News Source'}</span>
+                              {art.published_at && (
+                                <span className="article-date">
+                                  {new Date(art.published_at).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="article-title">{art.title}</h4>
+                            {art.description && (
+                              <p className="article-snippet">{art.description}</p>
+                            )}
+                            {href && (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer nofollow"
+                                className="article-link-btn"
+                              >
+                                <span>Read Source</span>
+                                <span>↗</span>
+                              </a>
                             )}
                           </div>
-                          <h4 className="article-title">{art.title}</h4>
-                          {art.description && (
-                            <p className="article-snippet">{art.description}</p>
-                          )}
-                          {art.url && (
-                            <a
-                              href={art.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="article-link-btn"
-                            >
-                              <span>Read Source</span>
-                              <span>↗</span>
-                            </a>
-                          )}
-                        </div>
-                      ))
+                        )
+                      })
                     ) : (
                       <div className="no-articles-msg">
                         <p>No directly matching articles were found in live news streams for this exact query.</p>

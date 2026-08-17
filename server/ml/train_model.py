@@ -1,26 +1,41 @@
-"""
-Enhanced Multi-Dataset ML Training Pipeline for Fake News Detection
-Trains an optimized TF-IDF + Logistic Regression Classifier on multiple benchmark datasets:
-- WELFake Dataset (72,134 articles)
-- ISOT Fake & True News (44,898 articles)
-- BuzzFeed News (182 articles)
-Totaling over 117,000+ real-world articles, augmented into 200,000+ training samples
-for high accuracy on both short claims and long-form articles.
+"""Training pipeline for the fake-news classifier.
+
+Builds a multi-scale TF-IDF + Logistic Regression model from whichever of the
+supported datasets are present in the data directory:
+
+- WELFake_Dataset.csv
+- ISOT Fake.csv / True.csv
+- BuzzFeed_{fake,real}_news_content.csv
+
+Only the datasets actually found on disk are used, so the resulting model's
+quality depends entirely on what has been downloaded. Check the printed
+article count and the ``accuracy``/``eval_method`` fields in the saved bundle
+before trusting a number.
+
+Each article yields two training samples (full body and headline) so the model
+handles both long articles and the short claims users paste in. The train/test
+split is grouped by source article to keep that augmentation leakage-free.
 """
 
+import argparse
 import os
 import re
-import sys
 import time
-import argparse
+
 import joblib
-import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.model_selection import GroupShuffleSplit
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+
+from ..constants import CLASS_LABELS
+from ..paths import DATA_DIR
+from ..datasets import DEFAULT_DRIVE_FOLDER_URL, sync_from_drive
+
+MODEL_TYPE = "Augmented Multi-Scale TF-IDF + Logistic Regression"
 
 
 def clean_text(text: str) -> str:
@@ -36,17 +51,16 @@ def clean_text(text: str) -> str:
 
 
 def find_data_dir(custom_dir: str = None) -> str:
-    search_dirs = [
-        custom_dir,
-        os.path.join(os.path.dirname(__file__), 'data'),
-        os.path.join(os.path.dirname(__file__), '..', 'data'),
-        os.path.join(os.getcwd(), 'data'),
-        os.path.join(os.getcwd(), 'server', 'data'),
-    ]
-    for d in search_dirs:
-        if d and os.path.isdir(d):
-            return d
-    return os.path.join(os.path.dirname(__file__), '..', 'data')
+    """Resolve the dataset directory.
+
+    Uses the single ``paths.DATA_DIR`` constant rather than guessing across
+    four candidate locations. The old search list silently fell back to a
+    non-existent path, which is how an empty data directory turned into a
+    model trained on whatever happened to be lying around.
+    """
+    if custom_dir and os.path.isdir(custom_dir):
+        return custom_dir
+    return DATA_DIR
 
 
 def load_all_datasets(data_dir: str = None) -> pd.DataFrame:
@@ -120,29 +134,58 @@ def load_all_datasets(data_dir: str = None) -> pd.DataFrame:
 
 
 def build_augmented_dataset(df: pd.DataFrame) -> pd.DataFrame:
-    """Augment dataset with both full article text AND title-only samples.
-    This ensures the model excels at both full articles and short user claims/headlines!
+    """Emit two training samples per article: full text, and title-only.
+
+    Training on headlines as well as full bodies is what lets the model handle
+    the short claims users actually paste in.
+
+    Returns a DataFrame with columns ``['content', 'label', 'group']``. The
+    ``group`` column is the source article's index and is essential: both
+    samples derived from one article MUST stay on the same side of the
+    train/test split, otherwise the model sees an article's headline during
+    training and is then scored on that same article's body. That is textbook
+    leakage and inflates reported accuracy substantially (measured on the
+    BuzzFeed set: 82.6% leaky vs 67.1% grouped).
     """
     clean_titles = [clean_text(t) for t in df['title']]
     clean_texts = [clean_text(t) for t in df['text']]
+    groups = np.arange(len(df))
 
-    # Sample 1: Full content (Title + Text)
-    full_content = [f"{t} {b}".strip() for t, b in zip(clean_titles, clean_texts)]
-    df_full = pd.DataFrame({'content': full_content, 'label': df['label']})
+    # Sample 1: full content (title + body)
+    df_full = pd.DataFrame({
+        'content': [f"{t} {b}".strip() for t, b in zip(clean_titles, clean_texts)],
+        'label': df['label'].values,
+        'group': groups,
+    })
 
-    # Sample 2: Title-only (Short claim / headline)
-    df_titles = pd.DataFrame({'content': clean_titles, 'label': df['label']})
+    # Sample 2: title only (short claim / headline)
+    df_titles = pd.DataFrame({
+        'content': clean_titles,
+        'label': df['label'].values,
+        'group': groups,
+    })
 
-    # Combine
     augmented = pd.concat([df_full, df_titles], ignore_index=True)
-    # Filter out empty or trivial samples (less than 4 characters)
-    augmented = augmented[augmented['content'].str.len() > 3].reset_index(drop=True)
+    # Drop empty/trivial samples and exact duplicates.
+    augmented = augmented[augmented['content'].str.len() > 3]
     augmented = augmented.drop_duplicates(subset=['content']).reset_index(drop=True)
-    print(f"Augmented dataset size (Full Articles + Headlines): {len(augmented):,} unique training samples")
+    print(f"Augmented dataset size (Full Articles + Headlines): "
+          f"{len(augmented):,} unique training samples "
+          f"from {augmented['group'].nunique():,} articles")
     return augmented
 
 
-def train(data_dir: str = None, news_csv_path: str = None, output_path: str = None):
+def train(data_dir: str = None, output_path: str = None):
+    """Train and persist the fake-news classifier.
+
+    Args:
+        data_dir: Directory to scan for dataset CSVs. Defaults to server/data.
+        output_path: Destination .joblib path. Callers reachable from HTTP MUST
+            pass a path already validated by ``server.paths.resolve_model_output``.
+
+    Returns:
+        Tuple of ``(output_path, accuracy, classification_report, confusion_matrix)``.
+    """
     start_time = time.time()
     print("=" * 70)
     print("  FakeNewsAI Advanced Multi-Dataset Training Pipeline")
@@ -154,14 +197,24 @@ def train(data_dir: str = None, news_csv_path: str = None, output_path: str = No
 
     X = df['content']
     y = df['label'].astype(int)
+    groups = df['group']
 
-    # 2. Stratified Train/Test Split (80% Train, 20% Test)
-    print("\nSplitting into 80% Train and 20% Test (Stratified)...")
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.20, random_state=42, stratify=y
-    )
-    print(f"  Train set: {len(X_train):,} samples")
-    print(f"  Test set:  {len(X_test):,} samples")
+    # 2. Grouped 80/20 split.
+    # GroupShuffleSplit (not train_test_split) keeps every sample derived from
+    # the same source article on one side of the split, so the reported test
+    # accuracy is honest rather than leakage-inflated.
+    print("\nSplitting into 80% Train and 20% Test (grouped by source article)...")
+    splitter = GroupShuffleSplit(n_splits=1, test_size=0.20, random_state=42)
+    train_idx, test_idx = next(splitter.split(X, y, groups=groups))
+    X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+    y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+    print(f"  Train set: {len(X_train):,} samples "
+          f"({groups.iloc[train_idx].nunique():,} articles)")
+    print(f"  Test set:  {len(X_test):,} samples "
+          f"({groups.iloc[test_idx].nunique():,} articles)")
+    if len(set(y_test)) < 2:
+        print("  WARNING: test split contains a single class; "
+              "accuracy will not be meaningful.")
 
     # 3. Build Multi-Scale TF-IDF Pipeline
     print("\nBuilding and training Pipeline (Word N-grams 1-3 + Calibrated Logistic Regression)...")
@@ -179,8 +232,9 @@ def train(data_dir: str = None, news_csv_path: str = None, output_path: str = No
             C=3.0,
             solver='lbfgs',
             class_weight='balanced',
-            random_state=42,
-            n_jobs=-1
+            random_state=42
+            # n_jobs removed: it has no effect for the lbfgs solver and is
+            # deprecated in scikit-learn >= 1.8.
         ))
     ])
 
@@ -233,8 +287,17 @@ def train(data_dir: str = None, news_csv_path: str = None, output_path: str = No
 
     model_bundle = {
         'pipeline': pipeline,
+        # Consumed by predict.py (accuracy_display) and surfaced by /api/health
+        # so the UI never has to hardcode an accuracy figure.
         'accuracy': float(accuracy),
-        'classes': ['fake', 'real'],
+        # Records HOW accuracy was measured, so a future reader can tell a
+        # grouped (honest) number from the older leakage-inflated one.
+        'eval_method': 'grouped-80-20-holdout',
+        'model_type': MODEL_TYPE,
+        # Index-aligned with the integer class labels used during training
+        # (0 = fake, 1 = real). predict.py cross-checks this against
+        # pipeline.classes_ rather than assuming a column order.
+        'classes': list(CLASS_LABELS),
         'trained_at': time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime()),
         'total_samples': len(df),
         'total_articles': len(df_raw),
@@ -256,7 +319,33 @@ def main():
     parser = argparse.ArgumentParser(description="Train Enhanced Multi-Dataset Fake News Classifier")
     parser.add_argument("--data-dir", type=str, default=None, help="Directory containing dataset CSVs")
     parser.add_argument("--output", type=str, default=None, help="Path to output .joblib model")
+    parser.add_argument(
+        "--download-data",
+        action="store_true",
+        help="Download datasets from the public Google Drive folder before training.",
+    )
+    parser.add_argument(
+        "--drive-url",
+        type=str,
+        default=DEFAULT_DRIVE_FOLDER_URL,
+        help="Public Google Drive folder URL used when --download-data is set.",
+    )
+    parser.add_argument(
+        "--purge-existing-data",
+        action="store_true",
+        help="Delete existing .csv/.txt/.mat files in data dir before downloading.",
+    )
     args = parser.parse_args()
+
+    if args.download_data:
+        target_dir = args.data_dir or find_data_dir(None)
+        print(f"Preparing datasets in: {target_dir}")
+        synced = sync_from_drive(
+            folder_url=args.drive_url,
+            data_dir=target_dir,
+            purge_existing=args.purge_existing_data,
+        )
+        print(f"Downloaded {len(synced)} file(s) from Google Drive.")
 
     train(data_dir=args.data_dir, output_path=args.output)
 
