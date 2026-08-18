@@ -71,7 +71,7 @@ def main() -> None:
     )
     parser.add_argument("--prompt", "-p", help="Claim or article to analyse")
     parser.add_argument("--provider", default=None,
-                        help="LLM provider override (gemini|hf)")
+                        help="LLM provider override (hf|local)")
     parser.add_argument("--page-size", type=int,
                         default=settings.DEFAULT_PAGE_SIZE)
     parser.add_argument("--json", action="store_true",

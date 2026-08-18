@@ -86,9 +86,9 @@ never put a real key in `.env.example`.
 | `ENABLE_TRAIN_ENDPOINT` | `false` | Enables `/api/train_local`. Keep off in production. |
 | `NEWS_CACHE_TTL_SECONDS` | `600` | TTL for cached news results. |
 | `ENABLE_LLM` | `false` | Enables the optional LLM prose pass. |
-| `LLM_PROVIDER` | `hf` | `hf` (local transformers) or `gemini`. |
-| `LOCAL_HF_MODEL` | `Qwen/Qwen2.5-1.5B-Instruct` | Must be **instruction-tuned**. |
-| `HF_TOKEN` / `GOOGLE_API_KEY` | *(empty)* | Only for gated models / Gemini. |
+| `LLM_PROVIDER` | `hf` | `hf` (local transformers). |
+| `LOCAL_HF_MODEL` | `gpt2` | Hugging Face model identifier (default `gpt2`). |
+| `HF_TOKEN` | *(empty)* | Optional token for Hugging Face models. |
 | `LOG_LEVEL` | `INFO` | `DEBUG`/`INFO`/`WARNING`/`ERROR`. |
 
 ### 3. Backend

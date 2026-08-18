@@ -31,11 +31,6 @@ from .news_fetcher import search_news
 
 logger = get_logger(__name__)
 
-try:
-    import google.generativeai as genai
-except ImportError:
-    genai = None
-
 # Fields the LLM is permitted to rewrite. Anything else it returns is dropped.
 _LLM_EDITABLE_FIELDS = (
     "executive_summary",
@@ -65,36 +60,17 @@ _LLM_SYSTEM_PROMPT = (
 class LLMSearchAgent:
     """Coordinates the ML classifier, news search and synthesis stages."""
 
-    def __init__(self, provider: Optional[str] = None,
-                 google_api_key: Optional[str] = None):
+    def __init__(self, provider: Optional[str] = None):
         """
         Args:
-            provider: ``'hf'``/``'local'`` for a local model, ``'gemini'``/
-                ``'google'`` for the Gemini API. Defaults to the configured value.
-            google_api_key: Overrides ``GOOGLE_API_KEY`` from the environment.
+            provider: ``'hf'``/``'local'`` for a local Hugging Face model. Defaults to configured value.
         """
         self.provider = provider or settings.LLM_PROVIDER or "hf"
-        self.google_api_key = google_api_key or settings.GOOGLE_API_KEY
         self.llm_enabled = bool(settings.ENABLE_LLM)
-        if self.llm_enabled:
-            self._init_gemini()
-        else:
+        if not self.llm_enabled:
             logger.info(
                 "LLM synthesis disabled (ENABLE_LLM=false); using rule engine."
             )
-
-    def _init_gemini(self) -> None:
-        """Configure the Gemini SDK when that provider is selected."""
-        if not (genai and self.google_api_key
-                and self.provider in ("gemini", "google")):
-            return
-        try:
-            genai.configure(api_key=self.google_api_key)
-            logger.info("Gemini client configured.")
-        except Exception:
-            # Misconfiguration must not take the whole service down, but it
-            # must be visible -- the previous code swallowed this silently.
-            logger.error("Failed to configure Gemini client", exc_info=True)
 
     # ------------------------------------------------------------------
     # Branch 2 helpers
@@ -180,37 +156,22 @@ class LLMSearchAgent:
     # ------------------------------------------------------------------
 
     def _call_llm(self, prompt: str) -> str:
-        """Send ``prompt`` to the configured provider; ``''`` on any failure."""
+        """Send ``prompt`` to the local Hugging Face LLM provider; ``''`` on any failure."""
         if not self.llm_enabled:
             return ""
 
-        if self.provider in ("gemini", "google") and genai and self.google_api_key:
-            for model_name in ("gemini-2.5-flash", "gemini-flash-latest"):
-                try:
-                    model = genai.GenerativeModel(
-                        model_name, system_instruction=_LLM_SYSTEM_PROMPT
-                    )
-                    response = model.generate_content(prompt)
-                    if response and response.text:
-                        return response.text
-                except Exception:
-                    logger.warning("Gemini model '%s' failed; trying next",
-                                   model_name, exc_info=True)
-            return ""
-
-        if self.provider in ("hf", "local"):
-            try:
-                resp = local_llm.generate(
-                    prompt,
-                    max_output_tokens=600,
-                    temperature=0.2,
-                    system_prompt=_LLM_SYSTEM_PROMPT,
-                )
-                return resp.get("candidates", [{}])[0].get("content", "")
-            except local_llm.LLMUnavailableError as exc:
-                logger.warning("Local LLM unavailable: %s", exc)
-            except Exception:
-                logger.error("Local LLM generation failed", exc_info=True)
+        try:
+            resp = local_llm.generate(
+                prompt,
+                max_output_tokens=600,
+                temperature=0.2,
+                system_prompt=_LLM_SYSTEM_PROMPT,
+            )
+            return resp.get("candidates", [{}])[0].get("content", "")
+        except local_llm.LLMUnavailableError as exc:
+            logger.warning("Local LLM unavailable: %s", exc)
+        except Exception:
+            logger.error("Local LLM generation failed", exc_info=True)
         return ""
 
     @staticmethod

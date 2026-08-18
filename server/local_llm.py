@@ -1,17 +1,9 @@
 """Optional local LLM backend (Hugging Face ``transformers``).
 
-This path is **disabled by default** (``ENABLE_LLM=false``). Two reasons:
+This path is **disabled by default** (``ENABLE_LLM=false``).
 
-1. The previous default model was ``gpt2``, a base (non instruction-tuned)
-   model. It cannot follow an instruction or emit valid JSON, so the agent's
-   LLM branch always failed parsing and silently fell back to the rule
-   engine -- the feature looked wired up but was inert.
-2. Loading a multi-gigabyte model is a heavy, surprising side effect for
-   anyone who just wants the classifier.
-
-The default is now an instruction-tuned model and the chat template is
-applied when the tokenizer provides one, so the prompt actually matches what
-the model was trained on.
+The configured Hugging Face model (defaulting to ``gpt2`` via ``settings.LOCAL_HF_MODEL``)
+is loaded lazily on demand when LLM synthesis is explicitly enabled.
 """
 
 import threading

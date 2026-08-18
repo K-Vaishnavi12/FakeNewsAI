@@ -41,20 +41,16 @@ class Settings:
     # No default. If unset, news_fetcher falls back to Google News RSS.
     NEWSAPI_KEY = os.getenv("NEWSAPI_KEY", "")
     HF_TOKEN = os.getenv("HF_TOKEN", "")
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 
     # --- Model -------------------------------------------------------------
     MODEL_MODE = os.getenv("MODEL_MODE", "local")
 
     # --- LLM synthesis (opt-in) -------------------------------------------
     # Disabled by default: the rule-based synthesis engine in agent.py is the
-    # supported path. Enabling this requires an instruction-tuned model that
-    # can actually follow the JSON contract in agent.py's prompt.
+    # supported path.
     ENABLE_LLM = _env_bool("ENABLE_LLM", False)
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "hf")
-    # Instruction-tuned default (gpt2 is a base model and cannot follow the
-    # prompt or emit JSON, which made the old LLM path silently useless).
-    LOCAL_HF_MODEL = os.getenv("LOCAL_HF_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
+    LOCAL_HF_MODEL = os.getenv("LOCAL_HF_MODEL", "gpt2")
 
     # --- HTTP / security ---------------------------------------------------
     # Explicit allow-list; never '*'. Vite dev server defaults included.

@@ -1,0 +1,354 @@
+/* ==========================================================================
+   Launch screen -- cinematic editorial intro.
+
+   Scoped entirely under `.launch` so none of this can leak into the app that
+   renders after it. Tokens are declared locally for the same reason.
+   ========================================================================== */
+
+.launch {
+  /* Local palette: warm gold accent on ivory over near-black newsprint. */
+  --gold: #c9a227;
+  --gold-soft: rgba(201, 162, 39, 0.55);
+  --ivory: #f4efe4;
+  --ivory-dim: rgba(244, 239, 228, 0.72);
+  --ivory-faint: rgba(244, 239, 228, 0.42);
+  --serif: 'Playfair Display', 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --sans-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  /* clamp() keeps the gutter proportional but never lets it collapse or
+     balloon, which is what stops the title from touching the edges at 375px. */
+  padding: clamp(1.5rem, 5vw, 4rem) clamp(1.25rem, 6vw, 5rem);
+  box-sizing: border-box;
+
+  /* The splash owns the whole viewport, so any overflow here would be a
+     horizontal scrollbar on the document. Clip it at the source. */
+  overflow: hidden;
+
+  background-color: #08070a;
+  color: var(--ivory);
+  font-family: var(--sans-ui);
+  text-align: center;
+  cursor: pointer;
+
+  /* Exit transition. Overridden to 0s for reduced-motion users below. */
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+  transition:
+    opacity 600ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 600ms cubic-bezier(0.4, 0, 0.2, 1),
+    filter 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.launch--exiting {
+  opacity: 0;
+  transform: scale(1.04);
+  filter: blur(6px);
+  /* Once we start dissolving, swallowing clicks would be confusing. */
+  pointer-events: none;
+}
+
+/* --- Background layers ---------------------------------------------------- */
+
+.launch__bg {
+  position: absolute;
+  inset: 0;
+  /* Declared cheapest-support-first: a browser that cannot parse a later
+     declaration keeps the earlier one. So plain JPG is the floor, and any
+     engine that understands image-set() upgrades to the smaller AVIF. */
+  background-image: url('/assets/news-bg.jpg');
+  background-image: -webkit-image-set(
+    url('/assets/news-bg.avif') type('image/avif'),
+    url('/assets/news-bg.jpg') type('image/jpeg')
+  );
+  background-image: image-set(
+    url('/assets/news-bg.avif') type('image/avif'),
+    url('/assets/news-bg.jpg') type('image/jpeg')
+  );
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Slightly desaturated so the gold accent is the only real colour. */
+  filter: grayscale(0.35) contrast(1.05);
+}
+
+.launch__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* Vignette darkens the corners so the eye is pulled to the centred title. */
+.launch__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 75% 65% at 50% 45%,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.45) 55%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+}
+
+/* --- Content -------------------------------------------------------------- */
+
+.launch__content {
+  position: relative; /* lift above the decorative layers */
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 62rem;
+}
+
+/* Pill badge */
+.launch__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  margin: 0 0 clamp(1.75rem, 4vh, 3rem);
+  padding: 0.55em 1.35em;
+
+  border: 1px solid rgba(244, 239, 228, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(6px);
+
+  font-size: clamp(0.6rem, 1.4vw, 0.72rem);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ivory-dim);
+  white-space: nowrap;
+}
+
+.launch__badge-dot {
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold-soft);
+  flex-shrink: 0;
+}
+
+/* Dominant editorial title */
+.launch__title {
+  margin: 0;
+  font-family: var(--serif);
+  /* Scales from 2.25rem on a 375px phone up to 6.5rem on a 1920px display
+     without ever needing a breakpoint. */
+  font-size: clamp(2.25rem, 8vw, 6.5rem);
+  font-weight: 500;
+  line-height: 1.06;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ivory);
+  text-wrap: balance;
+}
+
+.launch__title-em {
+  font-style: italic;
+  color: var(--gold);
+}
+
+/* Divider with a centred gold dot */
+.launch__divider {
+  position: relative;
+  width: min(22rem, 60%);
+  height: 1px;
+  margin: clamp(1.5rem, 3.5vh, 2.5rem) 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(244, 239, 228, 0.35) 50%,
+    transparent
+  );
+}
+
+.launch__divider-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold-soft);
+}
+
+.launch__tagline {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.05rem, 2.6vw, 1.75rem);
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--ivory-dim);
+  text-wrap: balance;
+}
+
+.launch__subtagline {
+  margin: clamp(0.6rem, 1.5vh, 0.9rem) 0 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+  color: var(--ivory-faint);
+}
+
+/* Glass CTA */
+.launch__cta {
+  margin-top: clamp(2rem, 5vh, 3.25rem);
+  padding: 0.9em 2em;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+
+  border: 1px solid rgba(244, 239, 228, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+
+  font-family: inherit;
+  font-size: clamp(0.78rem, 1.6vw, 0.9rem);
+  letter-spacing: 0.06em;
+  color: var(--ivory);
+  cursor: pointer;
+
+  transition:
+    background-color 250ms ease,
+    border-color 250ms ease,
+    transform 250ms ease;
+}
+
+.launch__cta:hover {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(244, 239, 228, 0.45);
+  transform: translateY(-2px);
+}
+
+.launch__cta:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.launch__cta-arrow {
+  transition: transform 250ms ease;
+}
+
+.launch__cta:hover .launch__cta-arrow {
+  transform: translateX(4px);
+}
+
+/* Bottom disclaimer */
+.launch__disclaimer {
+  position: relative;
+  z-index: 1;
+  /* Pinned to the bottom of the flex column without absolute positioning, so
+     it can never overlap the content on a short viewport -- it just pushes. */
+  margin: clamp(2.5rem, 8vh, 5rem) 0 0;
+  max-width: 46rem;
+
+  font-size: clamp(0.65rem, 1.4vw, 0.72rem);
+  line-height: 1.6;
+  letter-spacing: 0.03em;
+  color: rgba(244, 239, 228, 0.32);
+  text-wrap: balance;
+}
+
+/* --- Entrance animation ---------------------------------------------------
+   Everything animated lives inside this query, so a reduced-motion user gets
+   the finished layout immediately with no opacity/transform applied at all.
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes launch-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes launch-rise {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes launch-divider-in {
+    from { opacity: 0; transform: scaleX(0.3); }
+    to   { opacity: 1; transform: scaleX(1); }
+  }
+
+  .launch__bg,
+  .launch__overlay,
+  .launch__vignette {
+    animation: launch-fade-in 900ms ease-out both;
+  }
+
+  /* Staggered cascade: badge -> title -> divider -> taglines -> CTA -> note. */
+  .launch__badge      { animation: launch-rise 700ms ease-out 300ms both; }
+  .launch__title      { animation: launch-rise 800ms ease-out 480ms both; }
+  .launch__divider    { animation: launch-divider-in 700ms ease-out 760ms both; }
+  .launch__tagline    { animation: launch-rise 700ms ease-out 940ms both; }
+  .launch__subtagline { animation: launch-rise 700ms ease-out 1080ms both; }
+  .launch__cta        { animation: launch-rise 700ms ease-out 1240ms both; }
+  .launch__disclaimer { animation: launch-fade-in 900ms ease-out 1450ms both; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Exit instantly; the JS timer matches this with a 0ms delay. */
+  .launch,
+  .launch__cta,
+  .launch__cta-arrow {
+    transition: none;
+  }
+  .launch--exiting {
+    display: none;
+  }
+}
+
+/* --- Small screens --------------------------------------------------------
+   Rather than only shrinking type (clamp already does that), reclaim vertical
+   room and let the badge wrap instead of overflowing.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  .launch {
+    justify-content: center;
+    padding-inline: 1.25rem;
+  }
+
+  .launch__badge {
+    letter-spacing: 0.16em;
+    white-space: normal;
+  }
+
+  .launch__cta {
+    /* A comfortable tap target and full-width feel on narrow phones. */
+    width: 100%;
+    max-width: 20rem;
+    justify-content: center;
+    padding-block: 1em;
+  }
+
+  .launch__disclaimer {
+    margin-top: 2.25rem;
+  }
+}
+
+/* Short landscape viewports (e.g. a phone rotated): compress the rhythm so
+   the disclaimer does not get pushed off-screen. */
+@media (max-height: 560px) {
+  .launch__badge   { margin-bottom: 1rem; }
+  .launch__divider { margin-block: 1rem; }
+  .launch__cta     { margin-top: 1.25rem; }
+  .launch__disclaimer { margin-top: 1.5rem; }
+}
