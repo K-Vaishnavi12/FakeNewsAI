@@ -21,6 +21,7 @@ from flask_limiter.util import get_remote_address
 
 from .agent import LLMSearchAgent
 from .config import settings
+from .credibility import get_source_credibility
 from .logging_config import get_logger, setup_logging
 from .ml_model import (
     classify_with_probabilities,
@@ -330,6 +331,9 @@ def search_route():
             "fake_probability": ml_meta.get("fake_probability"),
             "real_probability": ml_meta.get("real_probability"),
             "score": ml_meta.get("score"),
+            "credibility": get_source_credibility(
+                source, article.get("url", "")
+            ),
         })
 
     return jsonify({"query": query, "results": results})

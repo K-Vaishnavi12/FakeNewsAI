@@ -34,6 +34,14 @@ const PRESET_EXAMPLES = [
   },
 ]
 
+function credibilityBadgeClass(tier) {
+  const t = (tier || '').toLowerCase()
+  if (t === 'factchecker' || t === 'high') return 'cred-high'
+  if (t === 'medium') return 'cred-medium'
+  if (t === 'low') return 'cred-low'
+  return 'cred-unknown'
+}
+
 function App() {
   const [text, setText] = useState('')
   const [result, setResult] = useState(null)
@@ -469,18 +477,26 @@ function App() {
                         newsSources.map((art, idx) => {
                           const href = safeUrl(art.url)
                           return (
-                            <div key={idx} className="article-item">
-                              <div className="article-header">
-                                <span className="article-source">{art.source || 'News Source'}</span>
-                                {art.published_at && (
-                                  <span className="article-date">
-                                    {new Date(art.published_at).toLocaleDateString(undefined, {
-                                      month: 'short',
-                                      day: 'numeric',
-                                    })}
-                                  </span>
-                                )}
-                              </div>
+                          <div key={idx} className="article-item">
+                            <div className="article-header">
+                              <span className="article-source">{art.source || 'News Source'}</span>
+                              {art.credibility && (
+                                <span
+                                  className={`cred-badge ${credibilityBadgeClass(art.credibility.tier)}`}
+                                  title={`Credibility: ${art.credibility.score ?? 'n/a'} (${art.credibility.matched_on ?? 'unrated'})`}
+                                >
+                                  {art.credibility.label || 'Unknown'}
+                                </span>
+                              )}
+                              {art.published_at && (
+                                <span className="article-date">
+                                  {new Date(art.published_at).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                              )}
+                            </div>
                               <h4 className="article-title">{art.title}</h4>
                               {art.description && (
                                 <p className="article-snippet">{art.description}</p>

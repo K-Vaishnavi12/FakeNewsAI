@@ -67,7 +67,7 @@ body {
 .page--hidden  { display: none !important; }
 
 /* ============================================================
-   PAGE 2 — INPUT PAGE (White newspaper broadsheet)
+   PAGE 2 — INPUT PAGE (Aged-paper newspaper theme)
    ============================================================ */
 
 .page-input {
@@ -78,21 +78,21 @@ body {
   justify-content: center;
   padding: 40px 16px 60px;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--paper);
 }
 
 /* Subtle horizontal ruling lines — classic broadsheet */
 .page-input__bg {
   position: fixed;
   inset: 0;
-  background-color: #ffffff;
+  background-color: var(--paper);
   background-image:
     repeating-linear-gradient(
       0deg,
       transparent,
-      transparent 30px,
-      rgba(80,55,20,0.04) 30px,
-      rgba(80,55,20,0.04) 31px
+      transparent 31px,
+      rgba(80,55,20,0.06) 31px,
+      rgba(80,55,20,0.06) 32px
     );
   z-index: 0;
 }
@@ -101,7 +101,7 @@ body {
 .page-input__overlay {
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(220,205,175,0.25) 100%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(244,235,200,0.6) 0%, transparent 70%);
   pointer-events: none;
   z-index: 1;
 }
@@ -286,7 +286,7 @@ body {
 
 /* ── Input card ─────────────────────────────────────────────── */
 .dark-card {
-  background: #ffffff;
+  background: #fdfaf3;
   border: 1px solid rgba(20,15,5,0.15);
   border-top: 3px solid var(--ink);
   border-radius: 0;
@@ -376,7 +376,7 @@ body {
 /* ── Textarea ───────────────────────────────────────────────── */
 .dark-textarea {
   width: 100%;
-  background: #fafafa;
+  background: #f6f1e6;
   border: 1px solid rgba(20,15,5,0.18);
   border-radius: 0;
   padding: 16px 18px;
@@ -398,7 +398,7 @@ body {
 .dark-textarea:focus {
   border-color: rgba(20,15,5,0.45);
   box-shadow: 0 0 0 2px rgba(20,15,5,0.06);
-  background: #ffffff;
+  background: #fffdf6;
 }
 
 /* ── Actions row ────────────────────────────────────────────── */
@@ -1137,6 +1137,21 @@ body {
   font-family: var(--sans);
   font-style: italic;
 }
+
+.cred-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--sans);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: #fff;
+}
+.cred-high    { background: #2e7d32; }
+.cred-medium  { background: #b26a00; }
+.cred-low     { background: #c62828; }
+.cred-unknown { background: #8a8a8a; }
 
 .article-title {
   font-family: var(--serif);

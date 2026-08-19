@@ -23,8 +23,8 @@ from .constants import (
     CLICKBAIT_SIGNAL_WORDS,
     OVERLAP_STOPWORDS,
     SEARCH_STOPWORDS,
-    TRUSTED_SOURCES,
 )
+from .credibility import CREDIBLE_THRESHOLD, get_source_credibility
 from .logging_config import get_logger
 from .ml_model import classify_with_probabilities, get_model_accuracy_display
 from .news_fetcher import search_news
@@ -100,6 +100,7 @@ class LLMSearchAgent:
                 "corroboration_score": 0.0,
                 "matched_sources": [],
                 "strong_match_count": 0,
+                "avg_source_credibility": 0.0,
                 "is_corroborated": False,
             }
 
@@ -115,6 +116,7 @@ class LLMSearchAgent:
         matched_sources: List[str] = []
         strong_matches = 0
         total_overlap_ratio = 0.0
+        total_credibility = 0.0
 
         for article in articles:
             source_name = self._source_name(article)
@@ -126,20 +128,26 @@ class LLMSearchAgent:
             overlap_ratio = overlap / max(len(claim_tokens), 1)
             total_overlap_ratio += overlap_ratio
 
-            is_trusted = any(src in source_name.lower() for src in TRUSTED_SOURCES)
+            cred = get_source_credibility(
+                source_name, article.get("url", "")
+            )
+            total_credibility += cred["score"]
 
-            if overlap_ratio >= 0.40 or (overlap >= 2 and is_trusted):
+            if overlap_ratio >= 0.40 or (overlap >= 2 and cred["score"] >= CREDIBLE_THRESHOLD):
                 strong_matches += 1
                 if source_name and source_name not in matched_sources:
                     matched_sources.append(source_name)
 
         avg_overlap = total_overlap_ratio / max(len(articles), 1)
-        score = min(1.0, (avg_overlap * 0.5) + (strong_matches * 0.20))
+        avg_credibility = total_credibility / max(len(articles), 1)
+        score = min(1.0, (avg_overlap * 0.5) + (strong_matches * 0.20)
+                    + (avg_credibility * 0.10))
 
         return {
             "corroboration_score": round(score, 3),
             "matched_sources": matched_sources[:4],
             "strong_match_count": strong_matches,
+            "avg_source_credibility": round(avg_credibility, 3),
             "is_corroborated": strong_matches >= 2 or score >= 0.35,
         }
 
@@ -457,6 +465,9 @@ class LLMSearchAgent:
                     "url": a.get("url", ""),
                     "description": a.get("description", ""),
                     "published_at": a.get("publishedAt", ""),
+                    "credibility": get_source_credibility(
+                        self._source_name(a), a.get("url", "")
+                    ),
                 }
                 for a in articles
             ],

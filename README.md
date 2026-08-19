@@ -158,6 +158,16 @@ the bare path).
 | `POST` | `/api/search` | `{query, page_size?}` → scored articles. |
 | `POST` | `/api/train_local` | Retrain. `403` unless `ENABLE_TRAIN_ENDPOINT=true`. |
 
+Every article returned by `/api/analyze` and `/api/search` now carries a
+`credibility` object: `{score, tier, label, matched_on, is_fact_checker}`.
+Tiers are `factchecker` (1.0), `high` (0.95), `medium` (0.75), `low` (0.35)
+and `unknown` (0.5). Matching uses the URL domain and the publisher name;
+a spoofed display name is demoted unless the domain corroborates it. Known
+fact-checking organisations are additionally loaded from
+`server/data/org_stats.csv` when present (see `server/credibility.py`). The
+corroboration scorer in `agent.py` now weights live-news matches by this
+score instead of the old binary `TRUSTED_SOURCES` substring flag.
+
 Error codes: `400` invalid/oversized input, `403` disabled endpoint,
 `413` body too large, `429` rate limited, `500` internal (details are logged
 server-side, never returned to the client).
